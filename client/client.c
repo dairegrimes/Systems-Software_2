@@ -8,9 +8,10 @@
 #include <arpa/inet.h>
 
 #define PORT 8888
+#define WEBSITE_DIR "file/"
 
-int main(){
-
+int main()
+{
 	//initialise client/server variables
 	int client_sock;
 	struct sockaddr_in server_addr;
@@ -18,6 +19,8 @@ int main(){
 	char username [10];
 	char password [10];
 	char response [10];
+	char message [500];
+	char file_directory [500];
 	char reply [10];
 	int choice = 0;
 
@@ -36,7 +39,8 @@ int main(){
 	server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
 	// connect to the server
-	if(connect(client_sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
+	if(connect(client_sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
+	{
 		perror("\nError connecting to server");
 		exit(1);
 	}
@@ -52,6 +56,7 @@ int main(){
 	send (client_sock, password, strlen (password), 0);
 
 	recv (client_sock , reply, 10, 0);
+	system ("clear");
 	if(strcmp (reply, "200") == 0)
 	{
 		printf("\nSuccessfully logged in");
@@ -64,7 +69,7 @@ int main(){
 	}
 
 
-	//infinite while loop to continuously communicate with server
+
 	while(1)
 	{
 		printf("\n1 : Transfer");
@@ -76,8 +81,104 @@ int main(){
 		{
 			case 1:
 			{
-				printf("\nStarting transfer");
 				send (client_sock, "TRANSFER", strlen ("TRANSFER"), 0);
+				system ("clear");
+				printf("\nStarting transfer\n");
+
+				printf ("\nEnter a file name: ");
+				scanf ("%s", message);
+				strcpy (file_directory, WEBSITE_DIR);
+				strcat (file_directory, message);
+
+				if(access (file_directory, F_OK) < 0)
+				{
+					printf ("\nThere is no file\n");
+					return 1;
+				}
+
+				send (client_sock, message, strlen (message), 0);
+
+
+
+
+
+				printf("\n1 : Root Directory");
+				printf("\n2 : Sales");
+				printf("\n3 : Promotions");
+				printf("\n4 : Offers");
+				printf("\n5 : Marketing");
+				printf("\n: ");
+				scanf("%d", &choice);
+
+				switch (choice)
+				{
+					case 1:
+					{
+						send (client_sock, "root/", strlen ("root/"), 0);
+					}break;
+
+					case 2:
+					{
+						send (client_sock, "sales/", strlen ("sales/"), 0);
+					}break;
+
+					case 3:
+					{
+						send (client_sock, "promotions/", strlen ("promotions/"), 0);
+					}break;
+
+					case 4:
+					{
+						send (client_sock, "offers/", strlen ("offers/"), 0);
+					}break;
+
+					case 5:
+					{
+						send (client_sock, "marketing/", strlen ("marketing/"), 0);
+					}break;
+
+					default:
+					{
+						printf ("\nInvalid Entry");
+					}
+				}
+
+				char file_buffer [500];
+				memset (file_buffer, 0, sizeof (file_buffer));
+
+				int block_size = 0;
+				int i = 0;
+				printf ("\nSending %s to server... \n", file_directory);
+				FILE *file_open = fopen (file_directory, "r");
+
+				while (block_size = fread (file_buffer, sizeof (char), 500, file_open) > 0)
+				{
+					printf ("\nData sent %d = %d\n", i, block_size);
+					if(send (client_sock, file_buffer, block_size, 0) < 0)
+					{
+						return 1;
+					}
+					memset (file_buffer, 0, sizeof (file_buffer));
+					i ++;
+				}
+
+				printf ("\nFile sent");
+
+				recv (client_sock, reply, 10, 0);
+
+				if(strcmp (reply, "Complete") == 0)
+				{
+					printf ("\nTransfer Completed");
+				}
+
+				else
+				{
+					printf ("\n Transfer not Completed\n");
+					close(client_sock);
+					return 1;
+				}
+
+				fclose (file_open);
 			}break;
 
 			case 2:
@@ -90,26 +191,5 @@ int main(){
 				printf ("\nInvalid Entry");
 			}
 		}
-
-
-		//send data to server
-		printf("Client: ");
-		scanf("%s", &buffer[0]);
-		send(client_sock, buffer, strlen(buffer), 0);
-
-		if(strcmp(buffer, "exit") == 0){
-			close(client_sock);
-			printf("Disconnected from server\n");
-			exit(1);
-		}
-
-		//read data from server
-		if(recv(client_sock, buffer, 1024, 0) < 0){
-			perror("\nError reading server data");
-		}else{
-			printf("\nServer: %s\n", buffer);
-		}
 	}
-
-	return 0;
 }
