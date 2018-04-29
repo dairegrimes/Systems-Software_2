@@ -21,9 +21,8 @@ int main()
   	int *sock;
     socklen_t addr_size;
     char buffer[500];
-    pid_t childpid;
 
-	// 2 - Create the socket
+
 	sock_desc = socket(AF_INET, SOCK_STREAM, 0);
 	if(sock_desc < 0)
 	{
@@ -32,13 +31,11 @@ int main()
 	}
 	printf("\nServer socket has been created.\n");
 
-	// 3 - Initialise the socket
-	//memset(&server_addr, '\0', sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(PORT);
 	server_addr.sin_addr.s_addr = INADDR_ANY;
 
-	// 4 - Bind the socket
+	
 	if(bind(sock_desc, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
 	{
 		perror("\nError binding server socket");
@@ -46,27 +43,28 @@ int main()
 	}
 	printf("\nSocket Binding to port %d successful\n", 8888);
 
-	// 5 - Listen for client connections
 	if(listen(sock_desc, 10) == 0)
 	{
-		printf("\nWaiting for client connections...\n");
+		printf("\nWaiting ...\n");
 	}
 	else
 	{
-		printf("\n[-]Error in binding.\n");
+		printf("\nCannot bind.\n");
 	}
 
-	//infinite loop to continuously listen for connections
+
 	while(1)
 	{
-		// 6 - Accept a clients connection
+		
 		client_sock = accept(sock_desc, (struct sockaddr*)&client_addr, &addr_size);
 		if(client_sock < 0)
 		{
 			exit(1);
 		}
-		// print client details using inet_ntoa() and inet_ntohs() - converts from network byte order to string
+
 		printf("\nConnection accepted from %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+
+		system ("clear");
 
 		pthread_t thread;
 		sock = malloc(1);

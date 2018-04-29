@@ -26,7 +26,7 @@ int main()
 
 	//create the client socket
 	client_sock = socket(AF_INET, SOCK_STREAM, 0);
-	if(client_sock < 0)
+	if(client_sock == -1)
 	{
 		printf("\nError creating client socket\n");
 		exit(1);
@@ -45,7 +45,6 @@ int main()
 		exit(1);
 	}
 	printf("\nSuccessfully Connected to Server\n");
-	send (client_sock, "INIT_LOGIN", strlen ("INIT_LOGIN"), 0);
 
 	printf("\nUsername: ");
 	scanf("%s", username);
@@ -81,25 +80,20 @@ int main()
 		{
 			case 1:
 			{
-				send (client_sock, "TRANSFER", strlen ("TRANSFER"), 0);
 				system ("clear");
 				printf("\nStarting transfer\n");
-
-				printf ("\nEnter a file name: ");
+				
+				printf ("\nEnter a file name and its path: ");
 				scanf ("%s", message);
-				strcpy (file_directory, WEBSITE_DIR);
-				strcat (file_directory, message);
 
-				if(access (file_directory, F_OK) < 0)
+
+				if(access (message, F_OK) == -1)
 				{
 					printf ("\nThere is no file\n");
 					return 1;
 				}
 
 				send (client_sock, message, strlen (message), 0);
-
-
-
 
 
 				printf("\n1 : Root Directory");
@@ -148,23 +142,21 @@ int main()
 
 				int block_size = 0;
 				int i = 0;
-				printf ("\nSending %s to server... \n", file_directory);
-				FILE *file_open = fopen (file_directory, "r");
+				printf ("\nSending %s to server... \n", message);
+				FILE *file_open = fopen (message, "r");
 
-				while (block_size = fread (file_buffer, sizeof (char), 500, file_open) > 0)
+				while ((block_size = fread (file_buffer, sizeof (char), 500, file_open)) > 0)
 				{
-					printf ("\nData sent %d = %d\n", i, block_size);
 					if(send (client_sock, file_buffer, block_size, 0) < 0)
 					{
-						return 1;
+						break;
 					}
 					memset (file_buffer, 0, sizeof (file_buffer));
-					i ++;
 				}
 
 				printf ("\nFile sent");
 
-				recv (client_sock, reply, 10, 0);
+				recv (client_sock, reply, 20, 0);
 
 				if(strcmp (reply, "Complete") == 0)
 				{
@@ -173,7 +165,7 @@ int main()
 
 				else
 				{
-					printf ("\n Transfer not Completed\n");
+					printf ("\nTransfer not Completed\n");
 					close(client_sock);
 					return 1;
 				}
